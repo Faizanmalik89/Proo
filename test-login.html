@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            margin: 20px;
+        }
+        button {
+            padding: 10px 15px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            cursor: pointer;
+            margin-right: 10px;
+            margin-bottom: 20px;
+        }
+        #output {
+            background-color: #f4f4f4;
+            padding: 15px;
+            border: 1px solid #ddd;
+            max-height: 500px;
+            overflow-y: auto;
+        }
+        .clear-btn {
+            background-color: #f44336;
+        }
+        h3 {
+            margin-top: 0;
+        }
+    </style>
+</head>
+<body>
+    <h2>Authentication Test</h2>
+    <button id="test-login">Test Regular Login</button>
+    <button id="test-admin-login">Test Admin Login</button>
+    <button id="clear-output" class="clear-btn">Clear Output</button>
+    
+    <div id="output">
+        <h3>Console Output</h3>
+        <div id="console-output"></div>
+    </div>
+
+    <script>
+        const consoleOutput = document.getElementById('console-output');
+        const originalConsoleLog = console.log;
+        const originalConsoleError = console.error;
+
+        // Override console.log to also display in our output div
+        console.log = function() {
+            const args = Array.from(arguments);
+            const message = args.map(arg => {
+                if (typeof arg === 'object') {
+                    return JSON.stringify(arg, null, 2);
+                }
+                return arg;
+            }).join(' ');
+            
+            const logItem = document.createElement('div');
+            logItem.textContent = message;
+            consoleOutput.appendChild(logItem);
+            consoleOutput.scrollTop = consoleOutput.scrollHeight;
+            
+            originalConsoleLog.apply(console, args);
+        };
+
+        // Override console.error to also display in our output div
+        console.error = function() {
+            const args = Array.from(arguments);
+            const message = args.map(arg => {
+                if (typeof arg === 'object') {
+                    return JSON.stringify(arg, null, 2);
+                }
+                return arg;
+            }).join(' ');
+            
+            const logItem = document.createElement('div');
+            logItem.style.color = 'red';
+            logItem.textContent = message;
+            consoleOutput.appendChild(logItem);
+            consoleOutput.scrollTop = consoleOutput.scrollHeight;
+            
+            originalConsoleError.apply(console, args);
+        };
+
+        // Regular login test function
+        async function testLogin() {
+            try {
+                console.log('Testing regular login...');
+                const response = await fetch('/api/auth/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    credentials: 'include',
+                    body: JSON.stringify({
+                        username: 'admin',
+                        password: 'adminpassword',
+                    }),
+                });
+                
+                const data = await response.json();
+                console.log('Response status:', response.status);
+                console.log('Response data:', data);
+                
+                if (response.ok) {
+                    console.log('Login successful!');
+                    // Now check if we can access the protected route
+                    const userResponse = await fetch('/api/auth/user', {
+                        credentials: 'include',
+                    });
+                    const userData = await userResponse.json();
+                    console.log('User data:', userData);
+                } else {
+                    console.log('Login failed!');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+            }
+        }
+
+        // Admin login test
+        async function testAdminLogin() {
+            try {
+                console.log('Testing admin login...');
+                const response = await fetch('/api/admin/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    credentials: 'include',
+                    body: JSON.stringify({
+                        username: 'admin',
+                        password: 'adminpassword',
+                    }),
+                });
+                
+                const data = await response.json();
+                console.log('Admin Response status:', response.status);
+                console.log('Admin Response data:', data);
+                
+                if (response.ok) {
+                    console.log('Admin login successful!');
+                    // Now check if we can access the protected admin route
+                    const adminResponse = await fetch('/api/admin/user', {
+                        credentials: 'include',
+                    });
+                    const adminData = await adminResponse.json();
+                    console.log('Admin user data:', adminData);
+                } else {
+                    console.log('Admin login failed!');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+            }
+        }
+
+        // Add event listeners to buttons
+        document.getElementById('test-login').addEventListener('click', testLogin);
+        document.getElementById('test-admin-login').addEventListener('click', testAdminLogin);
+        document.getElementById('clear-output').addEventListener('click', () => {
+            consoleOutput.innerHTML = '';
+        });
+    </script>
+</body>
+</html>
